@@ -1,0 +1,107 @@
+// =========================================================
+// PROJETO: Chaveiro Hexagonal Tech - Terceirão 2026
+// CURSO: 3º Ano Técnico em Desenvolvimento de Sistemas
+// FORMATO: Hexágono Arredondado | Preto + Dourado | Furo 6mm
+// =========================================================
+
+// --- PARÂMETROS DE PERSONALIZAÇÃO ---
+raio_hexagono = 24;       // Tamanho do hexágono (aprox. 48mm de largura)
+espessura_base = 3.2;     // Espessura da base preta (mm)
+altura_relevo = 1.4;      // Altura das letras, borda e trilhas douradas (mm)
+arredondamento = 3.0;     // Suaviza as pontas do hexágono
+
+// Tamanho do passador de cordão
+raio_furo_cordao = 3.0;   // 6mm de diâmetro (cabe cordão/fita/argola)
+raio_orelha = 7.5;        // Tamanho externo da alça superior
+
+cor_base = "#1C1C1C";     // Preto Profundo
+cor_detalhe = "#D4AF37";  // Dourado Metálico
+
+$fn = 70;
+
+// --- MÓDULO PARA DETALHE DE CIRCUITO ---
+module pino_circuito(angulo, r_inicio, r_fim) {
+    rotate([0, 0, angulo]) {
+        translate([r_inicio, -0.5, 0])
+            cube([r_fim - r_inicio, 1.0, altura_relevo]);
+        translate([r_fim, 0, 0])
+            difference() {
+                cylinder(h = altura_relevo, r = 1.3);
+                translate([0, 0, -0.1])
+                    cylinder(h = altura_relevo + 0.2, r = 0.55);
+            }
+    }
+}
+
+// --- MÓDULO DO FORMATO HEXAGONAL SUAVE ---
+module hexagono_base(raio) {
+    rotate([0, 0, 30])
+        offset(r = arredondamento)
+            circle(r = raio - arredondamento, $fn = 6);
+}
+
+// --- CONSTRUÇÃO DO CHAVEIRO ---
+union() {
+    // 1. BASE HEXAGONAL + ALÇA PARA CORDÃO (PRETO)
+    color(cor_base)
+    difference() {
+        union() {
+            // Corpo hexagonal
+            linear_extrude(height = espessura_base)
+                hexagono_base(raio_hexagono);
+            
+            // Alça superior integrada na ponta de cima do hexágono
+            translate([0, raio_hexagono + 3.0, 0])
+                cylinder(h = espessura_base, r = raio_orelha);
+        }
+        
+        // Furo largo de 6mm para passar o cordão
+        translate([0, raio_hexagono + 3.0, -0.5])
+            cylinder(h = espessura_base + 1, r = raio_furo_cordao);
+    }
+
+    // 2. DETALHES EM ALTO RELEVO (DOURADO)
+    color(cor_detalhe)
+    translate([0, 0, espessura_base]) {
+        
+        // Moldura hexagonal interna
+        linear_extrude(height = altura_relevo)
+            difference() {
+                hexagono_base(raio_hexagono - 0.8);
+                hexagono_base(raio_hexagono - 2.4);
+            }
+
+        // Anel de reforço ao redor do furo do cordão
+        translate([0, raio_hexagono + 3.0, 0])
+            difference() {
+                cylinder(h = altura_relevo, r = raio_orelha - 0.8);
+                translate([0, 0, -0.1])
+                    cylinder(h = altura_relevo + 0.2, r = raio_furo_cordao);
+            }
+
+        // Trilhas de circuito decorativas nos lados retos do hexágono
+        for (ang = [-15, 0, 15, 165, 180, 195]) {
+            pino_circuito(ang, raio_hexagono - 4.2, raio_hexagono - 8.2);
+        }
+
+        // Linha divisória central com nó de circuito
+        translate([-11, -0.5, 0]) cube([8.5, 1.0, altura_relevo]);
+        translate([2.5, -0.5, 0]) cube([8.5, 1.0, altura_relevo]);
+        cylinder(h = altura_relevo, r = 1.4);
+
+        // Texto Superior: TERCEIRÃO
+        translate([0, 5.0, 0])
+            linear_extrude(height = altura_relevo)
+                text("TERCEIRÃO", size = 4.3, font = "Liberation Sans:style=Bold", halign = "center", valign = "center", spacing = 1.05);
+
+        // Texto Inferior: 2026
+        translate([0, -5.8, 0])
+            linear_extrude(height = altura_relevo)
+                text("2026", size = 6.5, font = "Liberation Sans:style=Bold", halign = "center", valign = "center", spacing = 1.15);
+
+        // Detalhe de código na ponta inferior
+        translate([0, -13.0, 0])
+            linear_extrude(height = altura_relevo * 0.85)
+                text("</DS>", size = 2.6, font = "Liberation Mono:style=Bold", halign = "center", valign = "center");
+    }
+}
